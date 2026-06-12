@@ -16,12 +16,13 @@ initFirebaseAdmin();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const upload = multer();
+const upload = multer({
+  limits: { fileSize: 10 * 1024 * 1024, files: 5 },
+});
 
 const corsOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
   : [
-      "https://bulk-email-frontend.onrender.com",
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:3002",
@@ -162,6 +163,14 @@ app.post("/send-emails", verifyToken, upload.array("attachments"), async (req, r
       throw new Error("empty or not an array");
     }
   } catch {
+    return res.status(400).json({ error: "Invalid recipient list" });
+  }
+
+  if (
+    !recipients.every(
+      (r) => r && typeof r.email === "string" && r.email.includes("@")
+    )
+  ) {
     return res.status(400).json({ error: "Invalid recipient list" });
   }
 
@@ -314,6 +323,16 @@ app.delete("/api/lists/:listId", verifyToken, async (req, res) => {
     console.error("Error deleting list:", error);
     res.status(500).json({ error: "Failed to delete list" });
   }
+});
+
+// Attachment limit errors from multer
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res
+      .status(400)
+      .json({ error: "Attachments too large (max 10 MB per file, 5 files)" });
+  }
+  next(err);
 });
 
 // Start the server
