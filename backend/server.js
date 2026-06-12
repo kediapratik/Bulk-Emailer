@@ -214,49 +214,78 @@ app.post("/revoke-access", verifyToken, async (req, res) => {
   }
 });
 
-// Create new list
+// Create new list — owner is always the authenticated user
 app.post("/api/lists", verifyToken, async (req, res) => {
-  const { userId, listName } = req.body;
-  const list = new EmailList({
-    userId,
-    listName,
-    emails: [],
-  });
-  await list.save();
-  res.json(list);
+  try {
+    const list = new EmailList({
+      userId: req.user.uid,
+      listName: req.body.listName,
+      emails: [],
+    });
+    await list.save();
+    res.json(list);
+  } catch (error) {
+    console.error("Error creating list:", error);
+    res.status(500).json({ error: "Failed to create list" });
+  }
 });
 
-// Get all lists for user
-app.get("/api/lists/:userId", verifyToken, async (req, res) => {
-  const lists = await EmailList.find({ userId: req.params.userId });
-  res.json(lists);
+// Get all lists for the authenticated user
+app.get("/api/lists", verifyToken, async (req, res) => {
+  try {
+    const lists = await EmailList.find({ userId: req.user.uid });
+    res.json(lists);
+  } catch (error) {
+    console.error("Error fetching lists:", error);
+    res.status(500).json({ error: "Failed to fetch lists" });
+  }
 });
 
-// Add email to list
+// Add email to list (only if owned by the authenticated user)
 app.post("/api/lists/:listId/emails", verifyToken, async (req, res) => {
-  const { emails } = req.body;
-  const list = await EmailList.findByIdAndUpdate(
-    req.params.listId,
-    { $push: { emails: { $each: emails } } },
-    { new: true }
-  );
-  res.json(list);
+  try {
+    const list = await EmailList.findOneAndUpdate(
+      { _id: req.params.listId, userId: req.user.uid },
+      { $push: { emails: { $each: req.body.emails } } },
+      { new: true }
+    );
+    if (!list) return res.status(404).json({ error: "List not found" });
+    res.json(list);
+  } catch (error) {
+    console.error("Error adding emails:", error);
+    res.status(500).json({ error: "Failed to add emails" });
+  }
 });
 
-// Remove email from list
+// Remove email from list (only if owned by the authenticated user)
 app.delete("/api/lists/:listId/emails/:email", verifyToken, async (req, res) => {
-  const list = await EmailList.findByIdAndUpdate(
-    req.params.listId,
-    { $pull: { emails: req.params.email } },
-    { new: true }
-  );
-  res.json(list);
+  try {
+    const list = await EmailList.findOneAndUpdate(
+      { _id: req.params.listId, userId: req.user.uid },
+      { $pull: { emails: req.params.email } },
+      { new: true }
+    );
+    if (!list) return res.status(404).json({ error: "List not found" });
+    res.json(list);
+  } catch (error) {
+    console.error("Error removing email:", error);
+    res.status(500).json({ error: "Failed to remove email" });
+  }
 });
 
-// Delete list
+// Delete list (only if owned by the authenticated user)
 app.delete("/api/lists/:listId", verifyToken, async (req, res) => {
-  await EmailList.findByIdAndDelete(req.params.listId);
-  res.json({ message: "List deleted successfully" });
+  try {
+    const list = await EmailList.findOneAndDelete({
+      _id: req.params.listId,
+      userId: req.user.uid,
+    });
+    if (!list) return res.status(404).json({ error: "List not found" });
+    res.json({ message: "List deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting list:", error);
+    res.status(500).json({ error: "Failed to delete list" });
+  }
 });
 
 // Start the server

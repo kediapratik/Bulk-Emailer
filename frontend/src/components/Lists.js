@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { getAuth } from "firebase/auth";
 import api from "../utils/api";
 import * as XLSX from "xlsx";
 import Header from "./Header";
@@ -12,23 +11,19 @@ const Lists = () => {
   const [selectedList, setSelectedList] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [newEmail, setNewEmail] = useState("");
-  const auth = getAuth();
 
   useEffect(() => {
     fetchLists();
   }, []);
 
   const fetchLists = async () => {
-    const userId = auth.currentUser.uid;
-    const response = await api.get(`${API_ENDPOINTS.EMAIL_LISTS}/${userId}`);
+    const response = await api.get(API_ENDPOINTS.EMAIL_LISTS);
     setLists(response.data);
   };
 
   const handleCreateList = async () => {
     if (newListName.trim()) {
-      const userId = auth.currentUser.uid;
       await api.post(API_ENDPOINTS.EMAIL_LISTS, {
-        userId,
         listName: newListName,
       });
       fetchLists();
