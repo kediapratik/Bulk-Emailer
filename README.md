@@ -8,7 +8,7 @@ A full-stack web app for sending personalized bulk emails via Gmail. Upload a re
 
 ## Origin & Changes
 
-This project is a refactored and extended version of an open-source bulk email sender. The following changes have been made on top of the original codebase:
+This project is a refactored and extended version of [bulk-email-sender](https://github.com/Jatin-dudhani/bulk-email-sender) by [Jatin Dudhani](https://github.com/Jatin-dudhani). The following changes have been made on top of the original codebase:
 
 - **Server-side Firebase token verification** — all protected routes now verify a Firebase ID token from the `Authorization` header instead of trusting the email sent in the request body
 - **Axios interceptor** — a shared axios instance automatically attaches the Firebase ID token to every request
