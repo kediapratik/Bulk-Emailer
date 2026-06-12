@@ -74,7 +74,11 @@ app.post("/toggle-admin", verifyToken, async (req, res) => {
 
     res.json({ message: "Admin status updated successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error toggling admin status:", error);
+    if (error.code === "auth/user-not-found") {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.status(500).json({ error: "Failed to update admin status" });
   }
 });
 
@@ -89,11 +93,10 @@ app.get("/authorized-users", verifyToken, async (req, res) => {
         email: user.email,
         isAdmin: user.customClaims?.admin || false,
       }));
-    console.log("Found users:", authorizedUsers);
     res.json({ users: authorizedUsers });
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: error.message });
+    console.error("Error fetching authorized users:", error);
+    res.status(500).json({ error: "Failed to fetch users" });
   }
 });
 
@@ -119,7 +122,14 @@ app.post("/grant-access", verifyToken, async (req, res) => {
     console.log("Access granted successfully to:", userEmailToGrant);
     res.json({ message: "Access granted successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error granting access:", error);
+    if (error.code === "auth/user-not-found") {
+      // Message must contain "no user record" — frontend matches on it
+      return res
+        .status(404)
+        .json({ error: "no user record found for that email" });
+    }
+    res.status(500).json({ error: "Failed to grant access" });
   }
 });
 
@@ -142,11 +152,22 @@ app.get("/send-emails/progress", (req, res) => {
 
 app.post("/send-emails", verifyToken, upload.array("attachments"), async (req, res) => {
   const { valid, subject, body, senderEmail, appPassword, sendId } = req.body;
-  const files = req.files; 
+  const files = req.files;
   let hasResponded = false;
-  console.log("Subject = ", subject);
-  console.log("Body = ", body);
-  console.log("Sender Email = ", senderEmail);
+
+  let recipients;
+  try {
+    recipients = JSON.parse(valid);
+    if (!Array.isArray(recipients) || recipients.length === 0) {
+      throw new Error("empty or not an array");
+    }
+  } catch {
+    return res.status(400).json({ error: "Invalid recipient list" });
+  }
+
+  if (!subject || !body) {
+    return res.status(400).json({ error: "Subject and body are required" });
+  }
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -156,7 +177,7 @@ app.post("/send-emails", verifyToken, upload.array("attachments"), async (req, r
     },
   });
 
-  for (const recipient of JSON.parse(valid)) {
+  for (const recipient of recipients) {
     const name = recipient.name || extractNameFromEmail(recipient.email);
     const personalizedSubject = subject.replace(/{name}/g, name);
     const personalizedMessage = body.replace(/{name}/g, name);
@@ -186,7 +207,10 @@ app.post("/send-emails", verifyToken, upload.array("attachments"), async (req, r
       console.error(`Failed to send email to ${recipient.email}:`, error);
       if (!hasResponded) {
         hasResponded = true;
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({
+          error:
+            "Failed to send email. Check the sender email and app password.",
+        });
       }
     }
   }
@@ -210,7 +234,11 @@ app.post("/revoke-access", verifyToken, async (req, res) => {
 
     res.json({ message: "Access revoked successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error revoking access:", error);
+    if (error.code === "auth/user-not-found") {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.status(500).json({ error: "Failed to revoke access" });
   }
 });
 
