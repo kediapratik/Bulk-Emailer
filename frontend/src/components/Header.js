@@ -68,19 +68,11 @@ const Header = () => {
             </span>
           </div>
           <Link
-  to="/lists"
-  className="text-white hover:text-blue-200 transition-colors font-medium mr-4"
->
-  Lists
+            to="/lists"
+            className="text-white hover:text-blue-200 transition-colors font-medium mr-4"
+          >
+            Lists
           </Link>
-          <Link
-  to="/email-settings"
-  className="text-white hover:text-blue-200 transition-colors font-medium mr-4"
->
-  Email Settings
-</Link>
-
-
           {userData && (
             <div className="flex items-center space-x-4">
               {isAdmin && (
