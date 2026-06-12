@@ -133,10 +133,10 @@ npm run dev:frontend
 1. Run the app and sign in with Google once
 2. Go to Firebase Console → **Authentication** → **Users**
 3. Copy your UID and paste it into `backend/.env` as `MAIN_ADMIN_UID`
-4. Restart the backend, then call:
+4. Run from the `backend/` folder:
 
 ```bash
-curl -X POST http://localhost:5000/setup-admin
+npm run setup-admin
 ```
 
-This grants your account the `admin` and `authorized` Firebase custom claims. Once done, this endpoint should be removed or disabled before deploying to production.
+This grants your account the `admin` and `authorized` Firebase custom claims via a local CLI script — no HTTP endpoint is exposed for this.

@@ -207,41 +207,6 @@ app.post("/revoke-access", verifyToken, async (req, res) => {
   }
 });
 
-// Add this endpoint after your existing routes
-app.post("/setup-admin", async (req, res) => {
-  const uid = process.env.MAIN_ADMIN_UID;
-  if (!uid) return res.status(500).json({ error: "MAIN_ADMIN_UID not set" });
-  try {
-    await admin.auth().setCustomUserClaims(uid, {
-      admin: true,
-      authorized: true,
-    });
-    res.json({ message: "Admin setup successful" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Command to set up admin is ---  curl -X POST http://localhost:5000/setup-admin
-
-app.get("/test-admin", async (req, res) => {
-  try {
-    const listUsers = await admin.auth().listUsers();
-    res.json({
-      message: "Firebase Admin SDK working",
-      userCount: listUsers.users.length,
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-  console.log(
-    "Firebase Admin initialized with project:",
-    process.env.FIREBASE_PROJECT_ID
-  );
-});
-
-//the command to check admin  ------ curl http://localhost:5000/test-admin
-
 // Create new list
 app.post("/api/lists", verifyToken, async (req, res) => {
   const { userId, listName } = req.body;
