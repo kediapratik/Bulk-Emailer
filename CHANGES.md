@@ -1,0 +1,36 @@
+# Changes from the Original Repo
+
+This document lists all changes made on top of the original codebase ([bulk-email-sender](https://github.com/Jatin-dudhani/bulk-email-sender) by Jatin Dudhani), grouped by topic.
+
+## 1. Authentication & Authorization
+
+- Added server-side Firebase ID token verification on all protected routes (`backend/middleware/auth.js`) — the backend no longer trusts identity claims sent in the request body
+- Added a shared axios instance (`frontend/src/utils/api.js`) with a request interceptor that auto-attaches the Firebase ID token to every API call
+- Restored route guards: `/home` requires the `authorized` custom claim, `/admin` requires both `authorized` and `admin`
+- Admin identity is now derived from the verified token (`req.user.uid`), never from request body fields
+
+## 2. Endpoint Hardening
+
+- Removed the exposed `/setup-admin` and `/test-admin` HTTP endpoints — admin bootstrap is now a local CLI script (`npm run setup-admin` in `backend/`), so nothing is callable over HTTP
+- Enforced list ownership on all `/api/lists` routes — every query, update, and delete is filtered by the authenticated user's UID, so users cannot read or modify each other's lists
+- Scoped SSE progress events to the initiating client via a per-send `sendId` — previously all connected clients received every user's send progress
+
+## 3. Secrets & Configuration
+
+- Moved hardcoded admin emails and the Firebase admin UID into environment variables (`MAIN_ADMIN_EMAIL`, `MAIN_ADMIN_UID`, `REACT_APP_MAIN_ADMIN_EMAIL`)
+- Hardened `.gitignore`: wildcard pattern for config JSONs so no secret filenames are revealed in the repo, added root `node_modules`
+- Firebase service account key is never committed — GitHub push protection plus gitignore wildcard guard against it
+
+## 4. Input Validation & Error Handling
+
+- Recipient list JSON is validated before parsing — malformed input returns a 400 instead of crashing the route
+- Subject and body are required fields on `/send-emails`
+- Error responses are sanitized — clients receive generic messages while full error details go only to server logs
+- Removed sensitive logging (email body, sender email, and credentials are no longer printed to the console)
+- Added try/catch around all MongoDB operations
+
+## 5. Other Fixes (non-security)
+
+- Fixed the `EmailList` schema — removed a broken `required` constraint on `senderEmail` that silently failed every list creation
+- Rewrote the README with a full setup guide (Firebase, MongoDB Atlas, Gmail App Password, environment variables) and attribution to the original repo
+- Removed a redundant config README that referenced the original project's Firebase details
