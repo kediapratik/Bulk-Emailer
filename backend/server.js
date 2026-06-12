@@ -124,20 +124,24 @@ app.post("/grant-access", verifyToken, async (req, res) => {
 });
 
 app.get("/send-emails/progress", (req, res) => {
+  const { sendId } = req.query;
+  if (!sendId) {
+    return res.status(400).json({ error: "sendId is required" });
+  }
+
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
-  const clientId = Date.now();
-  emailProgress.set(clientId, res);
+  emailProgress.set(sendId, res);
 
   req.on("close", () => {
-    emailProgress.delete(clientId);
+    emailProgress.delete(sendId);
   });
 });
 
 app.post("/send-emails", verifyToken, upload.array("attachments"), async (req, res) => {
-  const { valid, subject, body, senderEmail, appPassword } = req.body;
+  const { valid, subject, body, senderEmail, appPassword, sendId } = req.body;
   const files = req.files; 
   let hasResponded = false;
   console.log("Subject = ", subject);
@@ -171,10 +175,13 @@ app.post("/send-emails", verifyToken, upload.array("attachments"), async (req, r
           : [],
       });
       console.log(`Email sent to: ${recipient.email}`);
-      // Send progress to all connected clients
-      emailProgress.forEach((client) => {
-        client.write(`data: ${JSON.stringify({ email: recipient.email })}\n\n`);
-      });
+      // Send progress only to the client that started this send
+      const progressClient = emailProgress.get(sendId);
+      if (progressClient) {
+        progressClient.write(
+          `data: ${JSON.stringify({ email: recipient.email })}\n\n`
+        );
+      }
     } catch (error) {
       console.error(`Failed to send email to ${recipient.email}:`, error);
       if (!hasResponded) {

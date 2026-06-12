@@ -50,12 +50,14 @@ const Body = () => {
     setProgress(0);
     let eventSource;
     try {
+      const sendId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const formData = new FormData();
       formData.append("valid", JSON.stringify(valid));
       formData.append("subject", subject);
       formData.append("body", body);
       formData.append("senderEmail", senderEmail);
       formData.append("appPassword", appPassword);
+      formData.append("sendId", sendId);
 
       attachments.forEach((file) => {
         formData.append("attachments", file);
@@ -65,7 +67,9 @@ const Body = () => {
       const progressIncrement = 100 / valid.length;
 
       // Subscribe to progress events
-      eventSource = new EventSource(`${API_ENDPOINTS.SEND_EMAILS}/progress`);
+      eventSource = new EventSource(
+        `${API_ENDPOINTS.SEND_EMAILS}/progress?sendId=${sendId}`
+      );
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
         setCurrentEmail(data.email);
