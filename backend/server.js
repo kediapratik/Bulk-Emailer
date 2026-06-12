@@ -34,7 +34,6 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 app.use(express.json());
-// console.log(process.env.EMAIL_USER);
 let emailProgress = new Map();
 
 function extractNameFromEmail(email) {

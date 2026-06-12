@@ -49,7 +49,7 @@ const AdminPanel = () => {
       return;
     }
     try {
-      const response = await api.post(API_ENDPOINTS.GRANT_ACCESS, {
+      await api.post(API_ENDPOINTS.GRANT_ACCESS, {
         userEmailToGrant: newUserEmail,
       });
       setMessage("Access granted successfully");

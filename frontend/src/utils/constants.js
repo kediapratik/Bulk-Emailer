@@ -1,6 +1,5 @@
-const url1 = "https://bulk-email-backend-dx5l.onrender.com";
-const url2 = "http://localhost:5000";
-export const BASE_URL = url2;
+export const BASE_URL =
+  process.env.REACT_APP_API_URL || "http://localhost:5000";
 export const API_ENDPOINTS = {
   SEND_EMAILS: `${BASE_URL}/send-emails`,
   GRANT_ACCESS: `${BASE_URL}/grant-access`,
