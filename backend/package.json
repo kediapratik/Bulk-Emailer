@@ -2,7 +2,7 @@
   "name": "bulk-email-backend",
   "private": true,
   "engines": {
-    "node": ">=18"
+    "node": "24.x"
   },
   "scripts": {
     "start": "node server.js",
