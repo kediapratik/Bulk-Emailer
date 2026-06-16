@@ -34,6 +34,10 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 app.use(express.json());
+
+// Health check — lets the uptime pinger keep the free instance warm
+app.get("/health", (req, res) => res.json({ status: "ok" }));
+
 let emailProgress = new Map();
 
 function extractNameFromEmail(email) {
