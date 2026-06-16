@@ -16,6 +16,10 @@ This project is a refactored and extended version of [bulk-email-sender](https:/
 - **EmailList model fixed** — removed a `required` constraint on `senderEmail` that was silently breaking list creation
 - **Hardcoded values moved to env** — main admin email, admin UID, and feedback email are now configurable via environment variables instead of being hardcoded
 
+Additional endpoint/ownership hardening, input validation, dead-code removal,
+dependency fixes, and Render + Vercel deployment changes have also been made.
+See **[CHANGES.md](CHANGES.md)** for the full list.
+
 ---
 
 ## Prerequisites
@@ -140,3 +144,28 @@ npm run setup-admin
 ```
 
 This grants your account the `admin` and `authorized` Firebase custom claims via a local CLI script — no HTTP endpoint is exposed for this.
+
+---
+
+## Deployment (Render + Vercel)
+
+Backend (Express) runs on **Render** — it needs a long-lived process for the SSE
+progress stream. Frontend (React) runs on **Vercel**.
+
+### Backend → Render (Web Service)
+
+- **Root Directory:** `backend` · **Build:** `npm install` · **Start:** `npm start` · Free instance
+- Set the same variables as `backend/.env`. Add the Firebase service-account JSON as a **Secret File** and point `FIREBASE_SERVICE_ACCOUNT_PATH` at it (e.g. `/etc/secrets/serviceAccount.json`). Do **not** set `PORT` — Render injects it.
+- Pin a stable Node major in `engines` (e.g. `"24.x"`); an open-ended range can pull a Node version too new for some dependencies.
+
+### Frontend → Vercel
+
+- **Root Directory:** `frontend` (auto-detects Create React App)
+- Set the `REACT_APP_*` variables; `REACT_APP_API_URL` must point at the Render backend URL.
+
+### Wire them together
+
+1. On Render, set `CORS_ORIGINS` to your Vercel URL — **no trailing slash**.
+2. In **MongoDB Atlas → Network Access**, allow `0.0.0.0/0` (Render's free tier has no static outbound IP).
+3. In **Firebase → Authentication → Settings → Authorized domains**, **add your deployed frontend domain** — otherwise Google Sign-In fails with `auth/unauthorized-domain`.
+4. *(Optional)* Keep the free Render instance warm by pinging `GET /health` every ~14 min with a free cron service.
