@@ -168,4 +168,21 @@ progress stream. Frontend (React) runs on **Vercel**.
 1. On Render, set `CORS_ORIGINS` to your Vercel URL — **no trailing slash**.
 2. In **MongoDB Atlas → Network Access**, allow `0.0.0.0/0` (Render's free tier has no static outbound IP).
 3. In **Firebase → Authentication → Settings → Authorized domains**, **add your deployed frontend domain** — otherwise Google Sign-In fails with `auth/unauthorized-domain`.
-4. *(Optional)* Keep the free Render instance warm by pinging `GET /health` every ~14 min with a free cron service.
+4. **Keep-warm:** add a free [UptimeRobot](https://uptimerobot.com) HTTP(s) monitor on `GET /health` at a 5-minute interval (or a [cron-job.org](https://cron-job.org) job every ~10 min) so the free Render instance doesn't cold-start (~50s) on the first visit.
+
+---
+
+## Known limitations & planned rework
+
+### Sender authentication (Gmail App Password)
+
+The send form currently asks each sender for their Gmail address and a **Google App Password**, which the backend uses for SMTP. This is a known limitation, kept for now to stay simple:
+
+- A Gmail App Password is **not send-only** — it grants full mailbox access (read via IMAP + send via SMTP) and bypasses 2-Step Verification. Asking users to enter one on a website is a security anti-pattern; a security-aware user shouldn't (and generally won't) do it.
+- It's fine for a single-user/personal deployment, but does not scale to a trusted multi-user app.
+
+**Planned rework (pick one):**
+
+1. **Drop the credential fields** and send through the server-configured account (`EMAIL_USER` / `EMAIL_PASS`) — simplest; best for a personal/demo deployment.
+2. **Transactional email provider** (Resend / SendGrid / Postmark / SES) with a scoped API key — no user credentials, better deliverability. Lowest effort for a production-grade result.
+3. **Gmail OAuth** with the `gmail.send` scope — scoped (cannot read the inbox), revocable, no password collection; the "correct" multi-user approach, but needs Google verification for the restricted scope.

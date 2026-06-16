@@ -50,9 +50,14 @@ This document lists all changes made on top of the original codebase ([bulk-emai
 - Pinned the Node engine to `24.x` in `backend/package.json` (an open-ended range pulled a Node version too new for some dependencies on the host)
 - Deployed the backend to Render (Web Service) and the frontend to Vercel, both from GitHub `main`
 - Documented the full Render + Vercel deployment flow in the README
+- Set up an UptimeRobot monitor pinging `/health` every 5 minutes to keep the free Render instance warm (avoids ~50s cold starts)
 
 ## 8. Other Fixes (non-security)
 
 - Fixed the `EmailList` schema — removed a broken `required` constraint on `senderEmail` that silently failed every list creation
 - Rewrote the README with a full setup guide (Firebase, MongoDB Atlas, Gmail App Password, environment variables) and attribution to the original repo
 - Removed a redundant config README that referenced the original project's Firebase details
+
+## Known Limitations & Planned Rework
+
+- **Sender authentication (Gmail App Password).** The send form collects each sender's Gmail address + App Password for SMTP. An App Password is *not* send-only — it grants full mailbox access (IMAP read + SMTP send) and bypasses 2FA, so collecting it from users is a security anti-pattern. Planned rework: drop the fields and use the server-configured account, switch to a transactional provider (Resend/SendGrid) with a scoped API key, or use Gmail OAuth with the `gmail.send` scope.
